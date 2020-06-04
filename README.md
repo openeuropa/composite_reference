@@ -1,6 +1,6 @@
 # Composite Reference
 
-The Composite Reference module allows to mark entity reference fields as composite. Composite reference fields ensure
+The Composite Reference module allows users to mark entity reference fields as composite. Composite reference fields ensure
 that referenced entities get deleted when the referencing entity is deleted.
 
 ## Development setup
