@@ -61,6 +61,7 @@ trait CompositeReferenceTestTrait {
     if ($reference_field = FieldConfig::loadByName($entity_type, $bundle, $field_name)) {
       return $reference_field;
     }
+
     $reference_field = FieldConfig::create([
       'field_name' => $field_name,
       'entity_type' => $entity_type,

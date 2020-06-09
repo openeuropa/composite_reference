@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\composite_reference\Kernel;
 
+use Drupal\Core\Field\Entity\BaseFieldOverride;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\Tests\composite_reference\Traits\CompositeReferenceTestTrait;
 
@@ -25,6 +26,8 @@ class CompositeFieldsTest extends EntityKernelTestBase {
     'text',
     'user',
     'entity_reference_revisions',
+    'composite_reference',
+    'composite_reference_test',
   ];
 
   /**
@@ -41,11 +44,12 @@ class CompositeFieldsTest extends EntityKernelTestBase {
 
   /**
    * Test the composite option of entity reference fields.
+   *
+   * @SuppressWarnings(PHPMD.CyclomaticComplexity)
    */
   public function testCompositeOption(): void {
-    $entity_type_manager = $this->container->get('entity_type.manager');
     // Create a test content type.
-    $type = $entity_type_manager->getStorage('node_type')->create(['name' => 'Test content type', 'type' => 'test_ct']);
+    $type = $this->entityTypeManager->getStorage('node_type')->create(['name' => 'Test content type', 'type' => 'test_ct']);
     $type->save();
 
     $reference_field_definitions = [
@@ -53,27 +57,65 @@ class CompositeFieldsTest extends EntityKernelTestBase {
         'field_name' => 'entity_reference_field',
         'field_label' => 'Entity reference field',
         'revisions' => FALSE,
+        'field_type' => 'field config',
       ],
       [
         'field_name' => 'entity_reference_revisions_field',
         'field_label' => 'Entity reference revisions field',
         'revisions' => TRUE,
+        'field_type' => 'field config',
+      ],
+      [
+        'field_name' => 'entity_reference',
+        'field_label' => 'Entity reference field',
+        'revisions' => FALSE,
+        'field_type' => 'base field',
+      ],
+      [
+        'field_name' => 'entity_reference_revisions',
+        'field_label' => 'Entity reference revisions field',
+        'revisions' => TRUE,
+        'field_type' => 'base field',
+      ],
+      [
+        'field_name' => 'entity_reference_override',
+        'field_label' => 'Entity reference override field',
+        'revisions' => FALSE,
+        'field_type' => 'base field override',
+      ],
+      [
+        'field_name' => 'entity_reference_revisions_override',
+        'field_label' => 'Entity reference revisions override field',
+        'revisions' => TRUE,
+        'field_type' => 'base field override',
       ],
     ];
 
     foreach ($reference_field_definitions as $field_definition) {
-      // Create an entity reference field for the test content type.
-      $entity_reference_field = $this->createEntityReferenceField('node', $type->id(), $field_definition['field_name'], $field_definition['field_label'], 'node', 'default', [
-        'target_bundles' => [
-          $type->id() => $type->id(),
-        ],
-      ], 1, $field_definition['revisions']);
-      // Configure the entity reference field to not be composite.
-      $entity_reference_field->setThirdPartySetting('composite_reference', 'composite', FALSE);
-      $entity_reference_field->save();
+      // For field configs, we need to create the field definitions.
+      if ($field_definition['field_type'] === 'field config') {
+        // Create an entity reference field for the test content type.
+        $entity_reference_field = $this->createEntityReferenceField('node', $type->id(), $field_definition['field_name'], $field_definition['field_label'], 'node', 'default', [
+          'target_bundles' => [
+            $type->id() => $type->id(),
+          ],
+        ], 1, $field_definition['revisions']);
+        // Configure the entity reference field to not be composite.
+        $entity_reference_field->setThirdPartySetting('composite_reference', 'composite', FALSE);
+        $entity_reference_field->save();
+      }
+
+      // For base field overrides, we need to create them based on a base field.
+      if ($field_definition['field_type'] === 'base field override') {
+        $base_field_definitions = $this->container->get('entity_field.manager')->getBaseFieldDefinitions('node');
+        $field_definition['field_name'] = str_replace('_override', '', $field_definition['field_name']);
+        $base_field_definition = $base_field_definitions[$field_definition['field_name']];
+        $override = BaseFieldOverride::createFromBaseFieldDefinition($base_field_definition, 'test_ct');
+        $override->save();
+      }
 
       // Create a node that will be referenced by the others.
-      $node_storage = $entity_type_manager->getStorage('node');
+      $node_storage = $this->entityTypeManager->getStorage('node');
       $values = [
         'type' => $type->id(),
         'title' => 'Referenced node',
@@ -82,30 +124,33 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       $referenced_node = $node_storage->create($values);
       $referenced_node->save();
 
-      // Assert that while an entity reference field is not composite,
-      // deleting a node will not delete any entities that it may be
-      // referencing.
-      // Create a node that references the first node
-      // and delete it right after.
-      $values = [
-        'type' => $type->id(),
-        'title' => 'Referencing node',
-        $field_definition['field_name'] => [
-          'target_id' => $referenced_node->id(),
-        ],
-      ];
-      if ($field_definition['revisions']) {
-        $values[$field_definition['field_name']]['target_revision_id'] = $referenced_node->getLoadedRevisionId();
-      }
-      $referencing_node = $node_storage->create($values);
-      $referencing_node->save();
-      $referencing_node->delete();
+      if ($field_definition['field_type'] === 'field config') {
+        // Assert that while an entity reference field is not composite,
+        // deleting a node will not delete any entities that it may be
+        // referencing. We only test this for field configs as the base fields
+        // are already configured to be composite.
+        // Create a node that references the first node
+        // and delete it right after.
+        $values = [
+          'type' => $type->id(),
+          'title' => 'Referencing node',
+          $field_definition['field_name'] => [
+            'target_id' => $referenced_node->id(),
+          ],
+        ];
+        if ($field_definition['revisions']) {
+          $values[$field_definition['field_name']]['target_revision_id'] = $referenced_node->getLoadedRevisionId();
+        }
+        $referencing_node = $node_storage->create($values);
+        $referencing_node->save();
+        $referencing_node->delete();
 
-      // Reload the referenced node and assert it was not deleted because
-      // the entity reference field is not composite yet.
-      $node_storage->resetCache();
-      $referenced_node = $node_storage->load($referenced_node->id());
-      $this->assertNotEmpty($referenced_node);
+        // Reload the referenced node and assert it was not deleted because
+        // the entity reference field is not composite yet.
+        $node_storage->resetCache();
+        $referenced_node = $node_storage->load($referenced_node->id());
+        $this->assertNotEmpty($referenced_node);
+      }
 
       // Assert that while an entity reference field is composite,
       // deleting a node will not delete an entity it is referencing
@@ -181,6 +226,32 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       $node_storage->resetCache();
       $referenced_node = $node_storage->load($referenced_node->id());
       $this->assertEmpty($referenced_node);
+    }
+  }
+
+  /**
+   * Tests that base field overrides get the third party settings.
+   */
+  public function testBaseFieldOverride(): void {
+    // Create a test entity bundle.
+    $type = $this->entityTypeManager->getStorage('node_type')->create([
+      'id' => 'test_bundle',
+      'label' => 'test_bundle',
+    ]);
+    $type->save();
+
+    $base_field_definitions = $this->container->get('entity_field.manager')->getBaseFieldDefinitions('entity_test_with_bundle');
+    foreach (['entity_reference', 'entity_reference_revisions'] as $field_name) {
+      $base_field_definition = $base_field_definitions[$field_name];
+      $override = BaseFieldOverride::createFromBaseFieldDefinition($base_field_definition, 'test_bundle');
+      $override->save();
+
+      $override = BaseFieldOverride::loadByName('entity_test_with_bundle', 'test_bundle', $field_name);
+      $expected = [
+        'composite' => TRUE,
+      ];
+
+      $this->assertEquals($expected, $override->getThirdPartySettings('composite_reference'));
     }
   }
 
