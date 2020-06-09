@@ -233,20 +233,17 @@ class CompositeFieldsTest extends EntityKernelTestBase {
    * Tests that base field overrides get the third party settings.
    */
   public function testBaseFieldOverride(): void {
-    // Create a test entity bundle.
-    $type = $this->entityTypeManager->getStorage('node_type')->create([
-      'id' => 'test_bundle',
-      'label' => 'test_bundle',
-    ]);
+    // Create a test node bundle.
+    $type = $this->entityTypeManager->getStorage('node_type')->create(['name' => 'Test content type', 'type' => 'test_ct']);
     $type->save();
 
-    $base_field_definitions = $this->container->get('entity_field.manager')->getBaseFieldDefinitions('entity_test_with_bundle');
+    $base_field_definitions = $this->container->get('entity_field.manager')->getBaseFieldDefinitions('node');
     foreach (['entity_reference', 'entity_reference_revisions'] as $field_name) {
       $base_field_definition = $base_field_definitions[$field_name];
-      $override = BaseFieldOverride::createFromBaseFieldDefinition($base_field_definition, 'test_bundle');
+      $override = BaseFieldOverride::createFromBaseFieldDefinition($base_field_definition, 'test_ct');
       $override->save();
 
-      $override = BaseFieldOverride::loadByName('entity_test_with_bundle', 'test_bundle', $field_name);
+      $override = BaseFieldOverride::loadByName('node', 'test_ct', $field_name);
       $expected = [
         'composite' => TRUE,
       ];
