@@ -9,7 +9,6 @@ declare(strict_types = 1);
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
-use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\field\FieldConfigInterface;
 
@@ -78,12 +77,12 @@ function composite_reference_entity_delete(EntityInterface $entity): void {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_presave() on the BaseFieldOverride entity type.
+ * Implements hook_ENTITY_TYPE_presave().
  *
  * Whenever a BaseFieldOverride entity is saved, we include the composite
  * reference setting into the exported third party settings.
  */
-function composite_reference_base_field_override_presave(Drupal\Core\Entity\EntityInterface $entity) {
+function composite_reference_base_field_override_presave(EntityInterface $entity) {
   /** @var \Drupal\Core\Field\Entity\BaseFieldOverride $entity */
   $setting = $entity->getItemDefinition()->getSetting('composite_reference');
   if (!is_null($setting)) {
