@@ -8,6 +8,7 @@
 declare(strict_types = 1);
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\field\FieldConfigInterface;
@@ -15,7 +16,7 @@ use Drupal\field\FieldConfigInterface;
 /**
  * Implements hook_form_FORM_ID_alter().
  *
- * Add the composite field option to entity reference fields
+ * Add the composite field option to entity reference fields.
  */
 function composite_reference_form_field_config_edit_form_alter(&$form, FormStateInterface $form_state): void {
   /** @var \Drupal\field\FieldConfigInterface $field_config */
@@ -24,6 +25,7 @@ function composite_reference_form_field_config_edit_form_alter(&$form, FormState
   if (!in_array($field_config->getType(), $applicable_field_types)) {
     return;
   }
+
   $form['composite'] = [
     '#type' => 'checkbox',
     '#title' => t('Composite field'),
@@ -32,7 +34,6 @@ function composite_reference_form_field_config_edit_form_alter(&$form, FormState
   ];
 
   $form['#entity_builders'][] = 'composite_reference_form_field_config_form_builder';
-
 }
 
 /**
@@ -59,7 +60,7 @@ function composite_reference_form_field_config_form_builder(string $entity_type,
  * Delete any composite referenced entities when deleting an entity.
  */
 function composite_reference_entity_delete(EntityInterface $entity): void {
-  if (!$entity instanceof \Drupal\Core\Entity\FieldableEntityInterface) {
+  if (!$entity instanceof FieldableEntityInterface) {
     return;
   }
   /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $field_definitions */
@@ -71,39 +72,21 @@ function composite_reference_entity_delete(EntityInterface $entity): void {
     if (!in_array($definition->getType(), $applicable_field_types)) {
       continue;
     }
+
     $composite_reference_field_manager->onDelete($entity, $definition);
   }
 }
 
-function composite_reference_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
-  if ($entity_type->id() != 'node') {
-    return [];
+/**
+ * Implements hook_ENTITY_TYPE_presave() on the BaseFieldOverride entity type.
+ *
+ * Whenever a BaseFieldOverride entity is saved, we include the composite
+ * reference setting into the exported third party settings.
+ */
+function composite_reference_base_field_override_presave(Drupal\Core\Entity\EntityInterface $entity) {
+  /** @var \Drupal\Core\Field\Entity\BaseFieldOverride $entity */
+  $setting = $entity->getItemDefinition()->getSetting('composite_reference');
+  if (!is_null($setting)) {
+    $entity->setThirdPartySetting('composite_reference', 'composite', $setting);
   }
-  $fields = [];
-  $fields['test'] = BaseFieldDefinition::create('entity_reference')
-    ->setLabel(t('Node'))
-    ->setDescription(t('Brother noder.'))
-    ->setSettings(array(
-      'target_type' => 'node',
-      'default_value' => 0,
-      'handler' => 'default',
-    ))
-    ->setDisplayOptions('view', [
-      'label' => 'hidden',
-      'type' => 'author',
-      'weight' => 0,
-    ])
-    ->setDisplayOptions('form', [
-      'type' => 'entity_reference_autocomplete',
-      'weight' => 5,
-      'settings' => [
-        'match_operator' => 'CONTAINS',
-        'size' => '60',
-        'autocomplete_type' => 'tags',
-        'placeholder' => '',
-      ],
-    ])
-    ->setDisplayConfigurable('form', TRUE)
-    ->setDisplayConfigurable('view', TRUE);
-  return $fields;
 }
