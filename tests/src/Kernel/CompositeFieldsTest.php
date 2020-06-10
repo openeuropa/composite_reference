@@ -150,15 +150,15 @@ class CompositeFieldsTest extends EntityKernelTestBase {
         $node_storage->resetCache();
         $referenced_node = $node_storage->load($referenced_node->id());
         $this->assertNotEmpty($referenced_node);
+
+        // Update the entity reference field configuration to be composite.
+        $entity_reference_field->setThirdPartySetting('composite_reference', 'composite', TRUE);
+        $entity_reference_field->save();
       }
 
       // Assert that while an entity reference field is composite,
       // deleting a node will not delete an entity it is referencing
       // if another entity also references the same entity.
-      // Update the entity reference field configuration to be composite.
-      $entity_reference_field->setThirdPartySetting('composite_reference', 'composite', TRUE);
-      $entity_reference_field->save();
-
       // Create a node that references the first one.
       $values = [
         'type' => $type->id(),
