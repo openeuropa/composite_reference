@@ -1,0 +1,13 @@
+composite_reference.settings:
+  type: mapping
+  label: 'Composite reference settings'
+  mapping:
+    composite:
+      type: boolean
+      label: 'Whether the field is a composite reference or not.'
+
+field.field.*.*.*.third_party.composite_reference:
+  type: composite_reference.settings
+
+core.base_field_override.*.*.*.third_party.composite_reference:
+  type: composite_reference.settings

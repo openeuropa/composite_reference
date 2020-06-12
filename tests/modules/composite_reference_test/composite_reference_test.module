@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * @file
+ * The Composite reference test module.
+ */
+
+declare(strict_types = 1);
+
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function composite_reference_test_entity_base_field_info(EntityTypeInterface $entity_type) {
+  $fields = [];
+
+  if ($entity_type->id() !== 'node') {
+    return $fields;
+  }
+
+  $fields['entity_reference'] = BaseFieldDefinition::create('entity_reference')
+    ->setLabel(t('Simple entity reference'))
+    ->setDescription(t('Simple entity reference field'))
+    ->setSettings([
+      'target_type' => 'node',
+      'composite_reference' => TRUE,
+    ]);
+
+  $fields['entity_reference_revisions'] = BaseFieldDefinition::create('entity_reference_revisions')
+    ->setLabel(t('Entity reference revisions'))
+    ->setDescription(t('Entity reference revisions field'))
+    ->setSettings([
+      'target_type' => 'node',
+      'composite_reference' => TRUE,
+    ]);
+
+  return $fields;
+}

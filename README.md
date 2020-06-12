@@ -1,7 +1,34 @@
 # Composite Reference
 
-The Composite Reference module allows users to mark entity reference fields as composite. Composite reference fields ensure
-that referenced entities get deleted when the referencing entity is deleted.
+The Composite Reference module allows users to mark entity reference fields as composite.
+
+Composite reference fields ensure that referenced entities get deleted when the referencing entity is deleted.
+
+The deletion is prevented if the referenced entity is referenced by another entity but typically you should
+ensure you only use this capability for entities that can be referenced only once.
+
+## Usage
+
+The module works with both Entity Reference and Entity Reference Revisions field types.
+
+### Field configs
+
+For configurable (bundle) fields, edit the field configuration and check the box to mark the reference as composite. The rest is taken care of.
+
+### Base fields
+
+For base fields, simply set a custom field setting on the entity reference or entity reference revision field definition, like so:
+
+```
+$fields['my_field'] = BaseFieldDefinition::create('entity_reference')
+  ->setLabel(t('My reference'))
+  ->setSettings([
+    'target_type' => 'node',
+    'composite_reference' => TRUE,
+  ]);
+```
+
+If the base field gets overridden, this setting will get exported to the third party setting and it will continue to work.
 
 ## Development setup
 
