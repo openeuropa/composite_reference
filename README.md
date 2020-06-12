@@ -4,8 +4,8 @@ The Composite Reference module allows users to mark entity reference fields as c
 
 Composite reference fields ensure that referenced entities get deleted when the referencing entity is deleted.
 
-The deletion is prevented if the referenced entity is referenced by another entity but typically you should ensure you only use this capability
-for entities that can be referenced only once.
+The deletion is prevented if the referenced entity is referenced by another entity but typically you should
+ensure you only use this capability for entities that can be referenced only once.
 
 ## Usage
 
