@@ -72,7 +72,7 @@ function composite_reference_entity_delete(EntityInterface $entity): void {
       continue;
     }
 
-    $composite_reference_field_manager->onDelete($entity, $definition);
+    $composite_reference_field_manager->entityDelete($entity, $definition);
   }
 }
 

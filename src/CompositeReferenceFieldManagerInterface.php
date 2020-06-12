@@ -31,6 +31,6 @@ interface CompositeReferenceFieldManagerInterface {
    * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
    *   The definition of the field to remove references from.
    */
-  public function onDelete(EntityInterface $entity, FieldDefinitionInterface $field_definition): void;
+  public function entityDelete(EntityInterface $entity, FieldDefinitionInterface $field_definition): void;
 
 }

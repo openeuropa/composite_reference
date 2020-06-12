@@ -71,15 +71,18 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
 
   /**
    * {@inheritdoc}
+   *
+   * @see composite_reference_entity_delete()
    */
-  public function onDelete(EntityInterface $entity, FieldDefinitionInterface $field_definition): void {
-    if ($this->assertFieldDefinition($field_definition)) {
-      $referenced_entities = $entity->get($field_definition->getName())->referencedEntities();
-      /** @var \Drupal\Core\Entity\EntityInterface $referenced_entity */
-      foreach ($referenced_entities as $referenced_entity) {
-        if ($referenced_entity->id() !== $entity->id() && empty($this->getReferencingEntities($referenced_entity))) {
-          $referenced_entity->delete();
-        }
+  public function entityDelete(EntityInterface $entity, FieldDefinitionInterface $field_definition): void {
+    if (!$this->isCompositeField($field_definition)) {
+      return;
+    }
+    $referenced_entities = $entity->get($field_definition->getName())->referencedEntities();
+    /** @var \Drupal\Core\Entity\EntityInterface $referenced_entity */
+    foreach ($referenced_entities as $referenced_entity) {
+      if ($referenced_entity->id() !== $entity->id() && empty($this->getReferencingEntities($referenced_entity))) {
+        $referenced_entity->delete();
       }
     }
   }
@@ -120,7 +123,7 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
    * @return bool
    *   TRUE if it's composite, FALSE otherwise.
    */
-  protected function assertFieldDefinition(FieldDefinitionInterface $field_definition): bool {
+  protected function isCompositeField(FieldDefinitionInterface $field_definition): bool {
     if ($field_definition instanceof FieldConfigInterface) {
       // This works for both configurable fields, as well as base field
       // overrides.
