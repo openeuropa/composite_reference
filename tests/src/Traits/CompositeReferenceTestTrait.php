@@ -35,27 +35,24 @@ trait CompositeReferenceTestTrait {
    * @param int $cardinality
    *   The cardinality of the field.
    * @param bool $revision
-   *   Whether to make it a entity reference revision field or not.
+   *   Whether to make it an entity reference revision field or not.
    *
    * @return \Drupal\field\FieldConfigInterface
    *   The field_config for the newly created field.
    */
   protected function createEntityReferenceField(string $entity_type, string $bundle, string $field_name, string $field_label, string $target_entity_type, string $selection_handler = 'default', array $selection_handler_settings = [], int $cardinality = 1, bool $revision = FALSE): FieldConfigInterface {
-    // Look for or add the specified field to the requested entity bundle.
+    // Find and load or add the specified field to the requested entity bundle.
     if (!FieldStorageConfig::loadByName($entity_type, $field_name)) {
       /** @var \Drupal\field\FieldStorageConfigInterface $reference_field_storage */
       $reference_field_storage = FieldStorageConfig::create([
         'field_name' => $field_name,
-        'type' => 'entity_reference',
+        'type' => $revision ? 'entity_reference_revisions' : 'entity_reference',
         'entity_type' => $entity_type,
         'cardinality' => $cardinality,
         'settings' => [
           'target_type' => $target_entity_type,
         ],
       ]);
-      if ($revision) {
-        $reference_field_storage->set('type', 'entity_reference_revisions');
-      }
       $reference_field_storage->save();
     }
     if ($reference_field = FieldConfig::loadByName($entity_type, $bundle, $field_name)) {
