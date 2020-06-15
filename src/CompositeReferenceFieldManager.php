@@ -81,7 +81,7 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
     $referenced_entities = $entity->get($field_definition->getName())->referencedEntities();
     /** @var \Drupal\Core\Entity\EntityInterface $referenced_entity */
     foreach ($referenced_entities as $referenced_entity) {
-      if ($referenced_entity->id() !== $entity->id() && empty($this->getReferencingEntities($referenced_entity))) {
+      if ($referenced_entity->uuid() !== $entity->uuid() && empty($this->getReferencingEntities($referenced_entity))) {
         $referenced_entity->delete();
       }
     }
