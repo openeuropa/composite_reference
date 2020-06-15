@@ -1,8 +1,8 @@
 # Changelog
 
-## [1.0.0-alpha1](https://github.com/openeuropa/composite_reference/tree/1.0.0-alpha1) (2020-06-15)
+## [8.x-1.0-alpha1](https://github.com/openeuropa/composite_reference/tree/8.x-1.0-alpha1) (2020-06-15)
 
-[Full Changelog](https://github.com/openeuropa/composite_reference/compare/e8566dfe7357f56be3a9c90f7d68c76a1883e823...1.0.0-alpha1)
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/e8566dfe7357f56be3a9c90f7d68c76a1883e823...8.x-1.0-alpha1)
 
 **Merged pull requests:**
 
