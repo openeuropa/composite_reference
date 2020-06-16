@@ -1,12 +1,22 @@
 # Changelog
 
+## [8.x-1.0-alpha2](https://github.com/openeuropa/composite_reference/tree/8.x-1.0-alpha2) (2020-06-16)
+
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0-alpha1...8.x-1.0-alpha2)
+
+**Merged pull requests:**
+
+- OPENEUROPA-3135: Fix variable name bug in determining the referencing fields. [\#6](https://github.com/openeuropa/composite_reference/pull/6) ([nagyad](https://github.com/nagyad))
+
 ## [8.x-1.0-alpha1](https://github.com/openeuropa/composite_reference/tree/8.x-1.0-alpha1) (2020-06-15)
 
 [Full Changelog](https://github.com/openeuropa/composite_reference/compare/e8566dfe7357f56be3a9c90f7d68c76a1883e823...8.x-1.0-alpha1)
 
 **Merged pull requests:**
 
+- Update release name. [\#5](https://github.com/openeuropa/composite_reference/pull/5) ([imanoleguskiza](https://github.com/imanoleguskiza))
 - OPENEUROPA-3135: Use uuid to exclude self when deleting references. [\#4](https://github.com/openeuropa/composite_reference/pull/4) ([imanoleguskiza](https://github.com/imanoleguskiza))
+- Prepare alpha1 release. [\#3](https://github.com/openeuropa/composite_reference/pull/3) ([imanoleguskiza](https://github.com/imanoleguskiza))
 - OPENEUROPA-3135: Add core functionality. [\#2](https://github.com/openeuropa/composite_reference/pull/2) ([imanoleguskiza](https://github.com/imanoleguskiza))
 - OPENEUROPA-3135: Initial scaffolding. [\#1](https://github.com/openeuropa/composite_reference/pull/1) ([imanoleguskiza](https://github.com/imanoleguskiza))
 
