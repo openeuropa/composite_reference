@@ -90,22 +90,22 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
   /**
    * Get the fields that reference entities of this type.
    *
-   * @param string $entity_type
-   *   The entity type.
+   * @param string $referenced_entity_type
+   *   The type of the referenced entity.
    *
    * @return array
    *   An array of field names, keyed by the entity type they reference from.
    */
-  protected function getReferenceFields(string $entity_type): array {
+  protected function getReferenceFields(string $referenced_entity_type): array {
     $entity_reference_map = $this->entityFieldManager->getFieldMapByFieldType('entity_reference');
     $entity_reference_revisions_map = $this->entityFieldManager->getFieldMapByFieldType('entity_reference_revisions');
     $map = NestedArray::mergeDeep($entity_reference_map, $entity_reference_revisions_map);
     $reference_fields = [];
     foreach ($map as $entity_type => $fields) {
-      $definitions = array_filter($this->entityFieldManager->getFieldStorageDefinitions($entity_type), function ($definition, $field_name) use ($fields, $entity_type) {
+      $definitions = array_filter($this->entityFieldManager->getFieldStorageDefinitions($entity_type), function ($definition, $field_name) use ($fields, $referenced_entity_type) {
         // Include only the fields types from our map and that reference the
         // entity type of the passed entity.
-        return in_array($field_name, array_keys($fields)) && $definition->getSetting('target_type') === $entity_type;
+        return in_array($field_name, array_keys($fields)) && $definition->getSetting('target_type') === $referenced_entity_type;
       }, ARRAY_FILTER_USE_BOTH);
 
       $reference_fields[$entity_type] = array_keys($definitions);
