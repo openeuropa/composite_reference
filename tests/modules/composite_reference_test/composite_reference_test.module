@@ -25,15 +25,22 @@ function composite_reference_test_entity_base_field_info(EntityTypeInterface $en
     ->setDescription(t('Simple entity reference field'))
     ->setSettings([
       'target_type' => 'node',
-      'composite_reference' => TRUE,
+      'composite_reference' => [
+        'composite' => TRUE,
+        'composite_revisions' => FALSE,
+      ],
     ]);
 
   $fields['entity_reference_revisions'] = BaseFieldDefinition::create('entity_reference_revisions')
     ->setLabel(t('Entity reference revisions'))
     ->setDescription(t('Entity reference revisions field'))
+    ->setRevisionable(TRUE)
     ->setSettings([
       'target_type' => 'node',
-      'composite_reference' => TRUE,
+      'composite_reference' => [
+        'composite' => TRUE,
+        'composite_revisions' => TRUE,
+      ],
     ]);
 
   return $fields;

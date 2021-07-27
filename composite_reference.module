@@ -25,12 +25,32 @@ function composite_reference_form_field_config_edit_form_alter(&$form, FormState
     return;
   }
 
-  $form['composite'] = [
+  $form['composite_reference'] = [
+    '#type' => 'details',
+    '#title' => t('Composite reference'),
+    '#open' => TRUE,
+  ];
+
+  $form['composite_reference']['composite'] = [
     '#type' => 'checkbox',
     '#title' => t('Composite field'),
     '#description' => t('Composite reference fields ensure that referenced entities get deleted when the referencing entity is deleted.'),
     '#default_value' => $field_config->getThirdPartySetting('composite_reference', 'composite') ?? FALSE,
   ];
+
+  if ($field_config->getType() === 'entity_reference_revisions') {
+    $form['composite_reference']['composite_revisions'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Composite revisions field'),
+      '#description' => t('Composite revisions reference fields ensure that all referenced entities get deleted from past revisions when the referencing entity is deleted.'),
+      '#default_value' => $field_config->getThirdPartySetting('composite_reference', 'composite_revisions') ?? FALSE,
+      '#states' => [
+        'visible' => [
+          ':input[name="composite"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+  }
 
   $form['#entity_builders'][] = 'composite_reference_form_field_config_form_builder';
 }
@@ -50,15 +70,24 @@ function composite_reference_form_field_config_edit_form_alter(&$form, FormState
  *   The form state.
  */
 function composite_reference_form_field_config_form_builder(string $entity_type, FieldConfigInterface $field_config, array &$form, FormStateInterface $form_state): void {
-  $field_config->setThirdPartySetting('composite_reference', 'composite', $form_state->getValue('composite'));
+  $composite = $form_state->getValue('composite');
+  $field_config->setThirdPartySetting('composite_reference', 'composite', $composite);
+  if (!$composite) {
+    // Ensure we do not allow composite revisions if the composite field is not
+    // checked.
+    $field_config->setThirdPartySetting('composite_reference', 'composite_revisions', FALSE);
+  }
+  else {
+    $field_config->setThirdPartySetting('composite_reference', 'composite_revisions', $form_state->getValue('composite_revisions'));
+  }
 }
 
 /**
- * Implements hook_entity_delete().
+ * Implements hook_entity_predelete().
  *
  * Delete any composite referenced entities when deleting an entity.
  */
-function composite_reference_entity_delete(EntityInterface $entity): void {
+function composite_reference_entity_predelete(EntityInterface $entity): void {
   if (!$entity instanceof FieldableEntityInterface) {
     return;
   }
@@ -85,7 +114,22 @@ function composite_reference_entity_delete(EntityInterface $entity): void {
 function composite_reference_base_field_override_presave(EntityInterface $entity) {
   /** @var \Drupal\Core\Field\Entity\BaseFieldOverride $entity */
   $setting = $entity->getItemDefinition()->getSetting('composite_reference');
-  if (!is_null($setting)) {
-    $entity->setThirdPartySetting('composite_reference', 'composite', $setting);
+  if (empty($setting)) {
+    return;
+  }
+
+  if (isset($setting['composite'])) {
+    $entity->setThirdPartySetting('composite_reference', 'composite', $setting['composite']);
+
+    if ($setting['composite'] && isset($setting['composite_revisions'])) {
+      // Composite revisions can be used only for entity_reference_revisions
+      // field types.
+      $composite_revisions = $entity->get('field_type') === 'entity_reference_revisions' ? $setting['composite_revisions'] : FALSE;
+      $entity->setThirdPartySetting('composite_reference', 'composite_revisions', $composite_revisions);
+    }
+    elseif ($setting['composite'] === FALSE) {
+      // Composite revisions setting cannot be set without composite being TRUE.
+      $entity->setThirdPartySetting('composite_reference', 'composite_revisions', FALSE);
+    }
   }
 }

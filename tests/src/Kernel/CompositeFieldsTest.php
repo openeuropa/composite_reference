@@ -52,7 +52,8 @@ class CompositeFieldsTest extends EntityKernelTestBase {
    */
   public function testCompositeOption(): void {
     // Create a test content type.
-    $type = $this->entityTypeManager->getStorage('node_type')->create(['name' => 'Test content type', 'type' => 'test_ct']);
+    $type = $this->entityTypeManager->getStorage('node_type')
+      ->create(['name' => 'Test content type', 'type' => 'test_ct']);
     $type->save();
 
     $reference_field_definitions = [
@@ -111,6 +112,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
         ], 1, $field_definition['revisions']);
         // Configure the entity reference field to not be composite.
         $entity_reference_field->setThirdPartySetting('composite_reference', 'composite', FALSE);
+        $entity_reference_field->setThirdPartySetting('composite_reference', 'composite_revisions', FALSE);
         $entity_reference_field->save();
       }
 
@@ -155,6 +157,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
         ];
         if ($field_definition['revisions']) {
           $values[$field_definition['field_name']]['target_revision_id'] = $referenced_entity->getLoadedRevisionId();
+          $entity_reference_field->setThirdPartySetting('composite_reference', 'composite_revisions', TRUE);
         }
         $referencing_node = $this->entityTypeManager->getStorage('node')->create($values);
         $referencing_node->save();
@@ -234,6 +237,13 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       }
       $referencing_node_two_three = $this->entityTypeManager->getStorage('node')->create($values);
       $referencing_node_two_three->save();
+
+      if ($field_definition['revisions']) {
+        // Create a new revision with setting the field empty.
+        $referencing_node_two_three->setNewRevision();
+        $referencing_node_two_three->set($field_definition['field_name'], [])
+          ->save();
+      }
       $referencing_node_two_three->delete();
 
       // Reload the referenced entity and assert it has been deleted because
@@ -249,11 +259,16 @@ class CompositeFieldsTest extends EntityKernelTestBase {
    */
   public function testBaseFieldOverride(): void {
     // Create a test node bundle.
-    $type = $this->entityTypeManager->getStorage('node_type')->create(['name' => 'Test content type', 'type' => 'test_ct']);
+    $type = $this->entityTypeManager->getStorage('node_type')
+      ->create(['name' => 'Test content type', 'type' => 'test_ct']);
     $type->save();
 
     $base_field_definitions = $this->container->get('entity_field.manager')->getBaseFieldDefinitions('node');
-    foreach (['entity_reference', 'entity_reference_revisions'] as $field_name) {
+    $fields = [
+      'entity_reference',
+      'entity_reference_revisions',
+    ];
+    foreach ($fields as $field_name) {
       $base_field_definition = $base_field_definitions[$field_name];
       $override = BaseFieldOverride::createFromBaseFieldDefinition($base_field_definition, 'test_ct');
       $override->save();
@@ -261,6 +276,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       $override = BaseFieldOverride::loadByName('node', 'test_ct', $field_name);
       $expected = [
         'composite' => TRUE,
+        'composite_revisions' => $field_name === 'entity_reference_revisions',
       ];
 
       $this->assertEquals($expected, $override->getThirdPartySettings('composite_reference'));

@@ -1,4 +1,4 @@
 services:
   composite_reference.composite_reference_field_manager:
     class: Drupal\composite_reference\CompositeReferenceFieldManager
-    arguments: ['@entity_type.manager', '@entity_field.manager']
+    arguments: ['@entity_type.manager', '@entity_field.manager', '@database']
