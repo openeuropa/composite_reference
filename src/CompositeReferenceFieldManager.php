@@ -83,7 +83,7 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
   /**
    * {@inheritdoc}
    *
-   * @see composite_reference_entity_delete()
+   * @see composite_reference_entity_predelete()
    */
   public function entityDelete(EntityInterface $entity, FieldDefinitionInterface $field_definition): void {
     if (!$this->isCompositeField($field_definition)) {
@@ -99,11 +99,13 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
       $entity_storage = $this->entityTypeManager->getStorage($entity->getEntityTypeId());
       $table_mapping = $entity_storage->getTableMapping();
       $table_name = $table_mapping->getDedicatedRevisionTableName($field_storage_definition);
+      // Get the reference field column name in the table.
+      $target_id_field = $table_mapping->getFieldColumnName($field_storage_definition, $field_storage_definition->getMainPropertyName());
 
       // Check if the field has a dedicated revision table otherwise we query
-      // the revision data table of the entity.
+      // the revision data table of the entity. For example for nodes:
+      // node_revision__field_name.
       if ($this->database->schema()->tableExists($table_name)) {
-        $target_id_field = $field_definition->getName() . '_' . $field_storage_definition->getMainPropertyName();
         $query = $this->database->select($table_name, 'r')
           ->fields('r', [$target_id_field])
           ->condition('entity_id', $entity->id())
@@ -111,11 +113,9 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
       }
       else {
         // Get the entity revision data table name from the entity type
-        // definition for the query.
+        // definition for the query. For example for nodes: node_field_revision.
         $entity_type_definition = $this->entityTypeManager->getDefinition($entity->getEntityTypeId());
         $table_name = $this->entityTypeManager->getDefinition($entity->getEntityTypeId())->getRevisionDataTable();
-        // Construct the column name from the field and the main property name.
-        $target_id_field = $field_definition->getName() . '__' . $field_storage_definition->getMainPropertyName();
 
         $query = $this->database->select($table_name, 'r')
           ->fields('r', [$target_id_field])
