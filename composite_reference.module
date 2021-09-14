@@ -41,8 +41,8 @@ function composite_reference_form_field_config_edit_form_alter(&$form, FormState
   if ($field_config->getType() === 'entity_reference_revisions') {
     $form['composite_reference']['composite_revisions'] = [
       '#type' => 'checkbox',
-      '#title' => t('Composite revisions field'),
-      '#description' => t('Composite revisions reference fields ensure that all referenced entities get deleted from past revisions when the referencing entity is deleted.'),
+      '#title' => t('Include past revisions'),
+      '#description' => t('If you include past revisions, reference entities will be deleted even if they are no longer referenced but have been in older revisions.'),
       '#default_value' => $field_config->getThirdPartySetting('composite_reference', 'composite_revisions') ?? FALSE,
       '#states' => [
         'visible' => [
