@@ -67,6 +67,9 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
     foreach ($reference_fields as $entity_type => $field_names) {
       $entity_type_storage = $this->entityTypeManager->getStorage($entity_type);
       $query = $entity_type_storage->getQuery('OR');
+      // We need to ensure that the entity is not referenced on older revisions
+      // either.
+      $query->allRevisions();
       foreach ($field_names as $field_name) {
         $query->condition("$field_name.target_id", $entity->id());
       }
@@ -90,9 +93,12 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
       return;
     }
 
+    // First, get all the entities that the current entity is referencing.
     $referenced_entities = $this->getReferencedEntities($entity, $field_definition);
     /** @var \Drupal\Core\Entity\EntityInterface $referenced_entity */
     foreach ($referenced_entities as $referenced_entity) {
+      // Loop through each of the referenced entities and check if no other
+      // entity is referencing it. If so, delete it.
       $referencing_entities = $this->getReferencingEntities($referenced_entity);
       // Remove the host entity from the results. This has to be done because at
       // this moment the host entity is not yet deleted.
@@ -107,7 +113,7 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
   }
 
   /**
-   * Gets the referenced entities from the given entity with field definition.
+   * Gets the referenced entities from the entity via a given field.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity.
@@ -118,48 +124,44 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
    *   Array of referenced entities if any, empty array otherwise.
    */
   protected function getReferencedEntities(EntityInterface $entity, FieldDefinitionInterface $field_definition): array {
-    // When composite revisions config is set, we need to query all past
-    // revisions for entities that were referenced.
-    if ($this->isCompositeRevisionsField($field_definition)) {
-      // Get the revision table name dedicated for the given field definition
-      // for the query.
-      $field_storage_definition = $field_definition->getFieldStorageDefinition();
-      $entity_storage = $this->entityTypeManager->getStorage($entity->getEntityTypeId());
-      $table_mapping = $entity_storage->getTableMapping();
-      $table_name = $table_mapping->getDedicatedRevisionTableName($field_storage_definition);
-      // Get the reference field column name in the table.
-      $column = $table_mapping->getFieldColumnName($field_storage_definition, $field_storage_definition->getMainPropertyName());
+    if (!$this->isCompositeRevisionsField($field_definition)) {
+      // If the field is not configured the delete also past revisions, we
+      // just get the referenced entities from the current revision.
+      return $entity->get($field_definition->getName())->referencedEntities();
+    }
 
-      // Check if the field has a dedicated revision table otherwise we query
-      // the revision data table of the entity. For example for nodes:
-      // node_revision__field_name.
-      if ($this->database->schema()->tableExists($table_name)) {
-        $query = $this->database->select($table_name, 'r')
-          ->fields('r', [$column])
-          ->condition('entity_id', $entity->id())
-          ->groupBy($column);
-      }
-      else {
-        // Get the entity revision data table name from the entity type
-        // definition for the query. For example for nodes: node_field_revision.
-        $entity_type_definition = $this->entityTypeManager->getDefinition($entity->getEntityTypeId());
-        $table_name = $this->entityTypeManager->getDefinition($entity->getEntityTypeId())->getRevisionDataTable();
+    // Otherwise we need to query all past revisions for entities that were
+    // referenced.
+    $field_storage_definition = $field_definition->getFieldStorageDefinition();
+    $entity_storage = $this->entityTypeManager->getStorage($entity->getEntityTypeId());
+    // Get the revision table name dedicated for the given field definition.
+    $table_mapping = $entity_storage->getTableMapping();
+    $table_name = $table_mapping->getDedicatedRevisionTableName($field_storage_definition);
+    // Get the reference field column name in the table.
+    $column = $table_mapping->getFieldColumnName($field_storage_definition, $field_storage_definition->getMainPropertyName());
 
-        $query = $this->database->select($table_name, 'r')
-          ->fields('r', [$column])
-          ->condition($entity_type_definition->getKey('id'), $entity->id())
-          ->isNotNull($column)
-          ->groupBy($column);
-      }
-      $results = $query->execute()->fetchAllKeyed(0, 0);
-      $referenced_entities = !empty($results) ? $this->entityTypeManager->getStorage($field_storage_definition->getSetting('target_type'))->loadMultiple($results) : [];
+    // Check if the field has a dedicated revision table. For example for nodes:
+    // node_revision__field_name.
+    if ($this->database->schema()->tableExists($table_name)) {
+      $query = $this->database->select($table_name, 'r')
+        ->fields('r', [$column])
+        ->condition('entity_id', $entity->id())
+        ->groupBy($column);
     }
     else {
-      // Gather the referenced entities from the actual revision.
-      $referenced_entities = $entity->get($field_definition->getName())->referencedEntities();
-    }
+      // If the field doesn't have a dedicated table, we query the entity
+      // revision data table. For example for nodes: node_field_revision.
+      $entity_type_definition = $this->entityTypeManager->getDefinition($entity->getEntityTypeId());
+      $table_name = $this->entityTypeManager->getDefinition($entity->getEntityTypeId())->getRevisionDataTable();
 
-    return $referenced_entities;
+      $query = $this->database->select($table_name, 'r')
+        ->fields('r', [$column])
+        ->condition($entity_type_definition->getKey('id'), $entity->id())
+        ->isNotNull($column)
+        ->groupBy($column);
+    }
+    $results = $query->execute()->fetchAllKeyed(0, 0);
+    return !empty($results) ? $this->entityTypeManager->getStorage($field_storage_definition->getSetting('target_type'))->loadMultiple($results) : [];
   }
 
   /**

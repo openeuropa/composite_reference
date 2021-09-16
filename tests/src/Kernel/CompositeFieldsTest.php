@@ -280,8 +280,10 @@ class CompositeFieldsTest extends EntityKernelTestBase {
    * Tests the composite reference fields with revision deletion.
    */
   public function testCompositeRevisionField(): void {
-    $type = $this->entityTypeManager->getStorage('node_type')
-      ->create(['name' => 'Test content type', 'type' => 'test_ct']);
+    $type = $this->entityTypeManager->getStorage('node_type')->create([
+      'name' => 'Test content type',
+      'type' => 'test_ct',
+    ]);
     $type->save();
 
     $reference_field_definitions = [
@@ -303,6 +305,15 @@ class CompositeFieldsTest extends EntityKernelTestBase {
         'field_type' => 'base field override',
         'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       ],
+      // Add a case in which the field is not configured to include revisions
+      // in the composite config.
+      [
+        'field_name' => 'entity_reference_rev_no_comp_rev',
+        'field_label' => 'Entity reference revisions field (no composite revisions)',
+        'field_type' => 'field config',
+        'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
+        'no composite revisions' => TRUE,
+      ],
     ];
 
     foreach ($reference_field_definitions as $field_definition) {
@@ -314,9 +325,10 @@ class CompositeFieldsTest extends EntityKernelTestBase {
             $type->id() => $type->id(),
           ],
         ], $field_definition['cardinality'], TRUE);
-        // Configure the entity reference field to not be composite.
         $entity_reference_field->setThirdPartySetting('composite_reference', 'composite', TRUE);
-        $entity_reference_field->setThirdPartySetting('composite_reference', 'composite_revisions', TRUE);
+        if (!isset($field_definition['no composite revisions'])) {
+          $entity_reference_field->setThirdPartySetting('composite_reference', 'composite_revisions', TRUE);
+        }
         $entity_reference_field->save();
       }
 
@@ -330,52 +342,69 @@ class CompositeFieldsTest extends EntityKernelTestBase {
         $override->save();
       }
 
-      // Create entities that will be referenced by other nodes.
-      $referenced_entity_storage = $this->entityTypeManager->getStorage('node');
-      $values = [
-        'type' => $type->id(),
-        'title' => 'Referenced node one',
-      ];
-      $referenced_entity_one = $referenced_entity_storage->create($values);
-      $referenced_entity_one->save();
+      $node_storage = $this->entityTypeManager->getStorage('node');
 
+      // Create an entity that will be referenced.
       $values = [
         'type' => $type->id(),
-        'title' => 'Referenced node two',
+        'title' => 'Referenced node',
       ];
-      $referenced_entity_two = $referenced_entity_storage->create($values);
-      $referenced_entity_two->save();
+      $referenced_entity = $node_storage->create($values);
+      $referenced_entity->save();
 
-      // Create a node that references the first entity.
+      // Create two entities that reference the referenced entity in their
+      // firs revision, but not the second one.
       $values = [
         'type' => $type->id(),
-        'title' => 'Referencing node',
+        'title' => 'Referencing node one',
         $field_definition['field_name'] => [
-          'target_id' => $referenced_entity_one->id(),
-          'target_revision_id' => $referenced_entity_one->getLoadedRevisionId(),
+          'target_id' => $referenced_entity->id(),
+          'target_revision_id' => $referenced_entity->getLoadedRevisionId(),
         ],
       ];
-      $referencing_node = $this->entityTypeManager->getStorage('node')->create($values);
-      $referencing_node->save();
+      /** @var \Drupal\node\NodeInterface $referencing_node_one */
+      $referencing_node_one = $this->entityTypeManager->getStorage('node')->create($values);
+      $referencing_node_one->save();
+      $referencing_node_one->setNewRevision(TRUE);
+      $referencing_node_one->set($field_definition['field_name'], NULL);
+      $referencing_node_one->save();
+      $this->assertCount(2, $node_storage->getQuery()->condition('nid', $referencing_node_one->id())->allRevisions()->execute());
 
-      // Create a new revision where we reference the second entity.
-      $referencing_node->setNewRevision();
-      $referencing_node->set($field_definition['field_name'], [
-        'target_id' => $referenced_entity_two->id(),
-        'target_revision_id' => $referenced_entity_two->getLoadedRevisionId(),
-      ])->save();
+      $values = [
+        'type' => $type->id(),
+        'title' => 'Referencing node two',
+        $field_definition['field_name'] => [
+          'target_id' => $referenced_entity->id(),
+          'target_revision_id' => $referenced_entity->getLoadedRevisionId(),
+        ],
+      ];
+      /** @var \Drupal\node\NodeInterface $referencing_node_two */
+      $referencing_node_two = $this->entityTypeManager->getStorage('node')->create($values);
+      $referencing_node_two->save();
+      $referencing_node_two->setNewRevision(TRUE);
+      $referencing_node_two->set($field_definition['field_name'], NULL);
+      $referencing_node_two->save();
+      $this->assertCount(2, $node_storage->getQuery()->condition('nid', $referencing_node_two->id())->allRevisions()->execute());
 
-      // Now delete the entity and assert both entities were deleted.
-      $referencing_node->delete();
+      // Now delete the first referencing node and assert the referenced node
+      // was not deleted because it was still being referenced by the second
+      // referencing node.
+      $referencing_node_one->delete();
+      $this->assertEquals($referenced_entity->id(), $node_storage->load($referenced_entity->id())->id());
 
-      // Reload the referenced entity and assert it has been deleted.
-      $referenced_entity_storage->resetCache();
-      $referenced_entity = $referenced_entity_storage->load($referenced_entity_one->id());
-      $this->assertEmpty($referenced_entity);
-      $referenced_entity = $referenced_entity_storage->load($referenced_entity_two->id());
-      $this->assertEmpty($referenced_entity);
+      // Now delete the second referencing entity as well.
+      $referencing_node_two->delete();
+      if (!isset($field_definition['no composite revisions'])) {
+        // This time assert that the referenced entity is deleted because
+        // there is nothing else to reference it.
+        $this->assertNull($node_storage->load($referenced_entity->id()));
+      }
+      else {
+        // If the field is not marked to delete past revisions, the node should
+        // not be deleted.
+        $this->assertEquals($referenced_entity->id(), $node_storage->load($referenced_entity->id())->id());
+      }
     }
-
   }
 
 }
