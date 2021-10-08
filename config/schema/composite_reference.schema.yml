@@ -5,6 +5,9 @@ composite_reference.settings:
     composite:
       type: boolean
       label: 'Whether the field is a composite reference or not.'
+    composite_revisions:
+      type: boolean
+      label: 'Whether all unreferenced entities from the previous revisions should be removed once the host entity is deleted.'
 
 field.field.*.*.*.third_party.composite_reference:
   type: composite_reference.settings

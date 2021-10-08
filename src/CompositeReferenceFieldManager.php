@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace Drupal\composite_reference;
 
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -32,16 +33,26 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
   protected $entityFieldManager;
 
   /**
+   * The database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $database;
+
+  /**
    * CompositeReferenceFieldManager constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
    *   The entity field manager.
+   * @param \Drupal\Core\Database\Connection $database
+   *   The database connection.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager, Connection $database) {
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
+    $this->database = $database;
   }
 
   /**
@@ -56,13 +67,16 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
     foreach ($reference_fields as $entity_type => $field_names) {
       $entity_type_storage = $this->entityTypeManager->getStorage($entity_type);
       $query = $entity_type_storage->getQuery('OR');
+      // We need to ensure that the entity is not referenced on older revisions
+      // either.
+      $query->allRevisions();
       foreach ($field_names as $field_name) {
         $query->condition("$field_name.target_id", $entity->id());
       }
 
       $ids = $query->execute();
       if ($ids) {
-        $referencing_entities = array_merge($referencing_entities, $entity_type_storage->loadMultiple($ids));
+        $referencing_entities = $entity_type_storage->loadMultiple($ids) + $referencing_entities;
       }
     }
 
@@ -72,19 +86,82 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
   /**
    * {@inheritdoc}
    *
-   * @see composite_reference_entity_delete()
+   * @see composite_reference_entity_predelete()
    */
   public function entityDelete(EntityInterface $entity, FieldDefinitionInterface $field_definition): void {
     if (!$this->isCompositeField($field_definition)) {
       return;
     }
-    $referenced_entities = $entity->get($field_definition->getName())->referencedEntities();
+
+    // First, get all the entities that the current entity is referencing.
+    $referenced_entities = $this->getReferencedEntities($entity, $field_definition);
     /** @var \Drupal\Core\Entity\EntityInterface $referenced_entity */
     foreach ($referenced_entities as $referenced_entity) {
-      if ($referenced_entity->uuid() !== $entity->uuid() && empty($this->getReferencingEntities($referenced_entity))) {
+      // Loop through each of the referenced entities and check if no other
+      // entity is referencing it. If so, delete it.
+      $referencing_entities = $this->getReferencingEntities($referenced_entity);
+      // Remove the host entity from the results. This has to be done because at
+      // this moment the host entity is not yet deleted.
+      if (array_key_exists($entity->id(), $referencing_entities)) {
+        unset($referencing_entities[$entity->id()]);
+      }
+
+      if ($referenced_entity->uuid() !== $entity->uuid() && empty($referencing_entities)) {
         $referenced_entity->delete();
       }
     }
+  }
+
+  /**
+   * Gets the referenced entities from the entity via a given field.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity.
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+   *   The reference field definition.
+   *
+   * @return array
+   *   Array of referenced entities if any, empty array otherwise.
+   */
+  protected function getReferencedEntities(EntityInterface $entity, FieldDefinitionInterface $field_definition): array {
+    if (!$this->isCompositeRevisionsField($field_definition)) {
+      // If the field is not configured the delete also past revisions, we
+      // just get the referenced entities from the current revision.
+      return $entity->get($field_definition->getName())->referencedEntities();
+    }
+
+    // Otherwise we need to query all past revisions for entities that were
+    // referenced.
+    $field_storage_definition = $field_definition->getFieldStorageDefinition();
+    $entity_storage = $this->entityTypeManager->getStorage($entity->getEntityTypeId());
+    // Get the revision table name dedicated for the given field definition.
+    $table_mapping = $entity_storage->getTableMapping();
+    $table_name = $table_mapping->getDedicatedRevisionTableName($field_storage_definition);
+    // Get the reference field column name in the table.
+    $column = $table_mapping->getFieldColumnName($field_storage_definition, $field_storage_definition->getMainPropertyName());
+
+    // Check if the field has a dedicated revision table. For example for nodes:
+    // node_revision__field_name.
+    if ($this->database->schema()->tableExists($table_name)) {
+      $query = $this->database->select($table_name, 'r')
+        ->fields('r', [$column])
+        ->condition('entity_id', $entity->id())
+        ->groupBy($column);
+    }
+    else {
+      // If the field doesn't have a dedicated table, we query the entity
+      // revision data table. For example for nodes: node_field_revision.
+      $entity_type_definition = $this->entityTypeManager->getDefinition($entity->getEntityTypeId());
+      $table_name = $this->entityTypeManager->getDefinition($entity->getEntityTypeId())->getRevisionDataTable();
+
+      $query = $this->database->select($table_name, 'r')
+        ->fields('r', [$column])
+        ->condition($entity_type_definition->getKey('id'), $entity->id())
+        ->isNotNull($column)
+        ->groupBy($column);
+    }
+    $results = $query->execute()->fetchAllKeyed(0, 0);
+    return !empty($results) ? $this->entityTypeManager->getStorage($field_storage_definition->getSetting('target_type'))->loadMultiple($results) : [];
   }
 
   /**
@@ -131,7 +208,30 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
     }
 
     if ($field_definition instanceof BaseFieldDefinition) {
-      return (bool) $field_definition->getSetting('composite_reference');
+      return (bool) $field_definition->getSetting('composite_reference')['composite'];
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Checks if a field definition is composite reference, including revisions.
+   *
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+   *   The field definition.
+   *
+   * @return bool
+   *   TRUE if it's composite revisions field, FALSE otherwise.
+   */
+  protected function isCompositeRevisionsField(FieldDefinitionInterface $field_definition): bool {
+    if ($field_definition instanceof FieldConfigInterface) {
+      // This works for both configurable fields, as well as base field
+      // overrides.
+      return $field_definition->getThirdPartySetting('composite_reference', 'composite_revisions', FALSE);
+    }
+
+    if ($field_definition instanceof BaseFieldDefinition) {
+      return (bool) $field_definition->getSetting('composite_reference')['composite_revisions'];
     }
 
     return FALSE;
