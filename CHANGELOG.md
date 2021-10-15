@@ -1,11 +1,23 @@
 # Changelog
 
+## [8.x-1.0](https://github.com/openeuropa/composite_reference/tree/8.x-1.0) (2021-10-15)
+
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0-alpha2...8.x-1.0)
+
+**Merged pull requests:**
+
+- EWPP-788: Implement support for entities referenced in old revisions. [\#11](https://github.com/openeuropa/composite_reference/pull/11) ([nagyad](https://github.com/nagyad))
+- EWPP-721: Update xdebug configuration. [\#10](https://github.com/openeuropa/composite_reference/pull/10) ([22Alexandra](https://github.com/22Alexandra))
+- EWPP-529: Replace drupal scaffolding library. [\#9](https://github.com/openeuropa/composite_reference/pull/9) ([sergepavle](https://github.com/sergepavle))
+- EWPP-516: Update docker images. [\#8](https://github.com/openeuropa/composite_reference/pull/8) ([22Alexandra](https://github.com/22Alexandra))
+
 ## [8.x-1.0-alpha2](https://github.com/openeuropa/composite_reference/tree/8.x-1.0-alpha2) (2020-06-16)
 
 [Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0-alpha1...8.x-1.0-alpha2)
 
 **Merged pull requests:**
 
+- Prepare alpha2 release. [\#7](https://github.com/openeuropa/composite_reference/pull/7) ([imanoleguskiza](https://github.com/imanoleguskiza))
 - OPENEUROPA-3135: Fix variable name bug in determining the referencing fields. [\#6](https://github.com/openeuropa/composite_reference/pull/6) ([nagyad](https://github.com/nagyad))
 
 ## [8.x-1.0-alpha1](https://github.com/openeuropa/composite_reference/tree/8.x-1.0-alpha1) (2020-06-15)
