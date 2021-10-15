@@ -1,10 +1,10 @@
 # Changelog
 
-## [1.0.0](https://github.com/openeuropa/composite_reference/tree/1.0.0) (2021-10-15)
+## [2.0.0](https://github.com/openeuropa/composite_reference/tree/2.0.0) (2021-10-15)
 
-[Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0...1.0.0)
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0...2.0.0)
 
-- Promote release 8.x-1.0 to 1.0.0.
+- Promote release 8.x-1.0 to 2.0.0.
 
 ## [8.x-1.0](https://github.com/openeuropa/composite_reference/tree/8.x-1.0) (2021-10-15)
 
