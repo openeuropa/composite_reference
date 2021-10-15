@@ -1,11 +1,18 @@
 # Changelog
 
+## [1.0.0](https://github.com/openeuropa/composite_reference/tree/1.0.0) (2021-10-15)
+
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0...1.0.0)
+
+- Promote release 8.x-1.0 to 1.0.0.
+
 ## [8.x-1.0](https://github.com/openeuropa/composite_reference/tree/8.x-1.0) (2021-10-15)
 
 [Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0-alpha2...8.x-1.0)
 
 **Merged pull requests:**
 
+- Prepare release 8.x-1.0. [\#12](https://github.com/openeuropa/composite_reference/pull/12) ([imanoleguskiza](https://github.com/imanoleguskiza))
 - EWPP-788: Implement support for entities referenced in old revisions. [\#11](https://github.com/openeuropa/composite_reference/pull/11) ([nagyad](https://github.com/nagyad))
 - EWPP-721: Update xdebug configuration. [\#10](https://github.com/openeuropa/composite_reference/pull/10) ([22Alexandra](https://github.com/22Alexandra))
 - EWPP-529: Replace drupal scaffolding library. [\#9](https://github.com/openeuropa/composite_reference/pull/9) ([sergepavle](https://github.com/sergepavle))
