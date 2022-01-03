@@ -69,7 +69,9 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
       $query = $entity_type_storage->getQuery('OR');
       // We need to ensure that the entity is not referenced on older revisions
       // either.
-      $query->allRevisions();
+      if ($this->entityTypeManager->getDefinition($entity_type)->isRevisionable()) {
+        $query->allRevisions();
+      }
       foreach ($field_names as $field_name) {
         $query->condition("$field_name.target_id", $entity->id());
       }
