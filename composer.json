@@ -38,7 +38,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Drupal\\Tests\\composite_reference\\": "./tests/"
+            "Drupal\\Tests\\composite_reference\\": "./tests/src"
         }
     },
     "extra": {
