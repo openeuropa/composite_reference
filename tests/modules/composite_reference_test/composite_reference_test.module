@@ -14,11 +14,31 @@ use Drupal\Core\Field\BaseFieldDefinition;
  * Implements hook_entity_base_field_info().
  */
 function composite_reference_test_entity_base_field_info(EntityTypeInterface $entity_type) {
-  $fields = [];
+  if ($entity_type->id() === 'entity_test') {
+    $fields = [];
 
-  if ($entity_type->id() !== 'node') {
+    // Create a reference field to node entities so that the system has a ref
+    // field to node from an entity type that is not revisionable. This is
+    // because when we delete a referenced entity (in this case a node), we
+    // check if there is no other entity that references it, in any of the
+    // previous revisions. So if we have an entity type that is not
+    // revisionable, we cannot use `allRevisions` in the query.
+    // @see CompositeReferenceFieldManager::getReferencingEntities().
+    $fields['non_rev_entity_type_reference_field'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('No rev entity type ref field'))
+      ->setDescription(t('No rev entity type ref field'))
+      ->setSettings([
+        'target_type' => 'node',
+      ]);
+
     return $fields;
   }
+
+  if ($entity_type->id() !== 'node') {
+    return [];
+  }
+
+  $fields = [];
 
   $fields['entity_reference'] = BaseFieldDefinition::create('entity_reference')
     ->setLabel(t('Simple entity reference'))
