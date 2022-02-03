@@ -1,7 +1,7 @@
 # Change Log
 
-## [8.x-1.0-alpha3](https://github.com/openeuropa/composite_reference/tree/8.x-1.0-alpha3) (2022-02-03)
-[Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.0.0...8.x-1.0-alpha3)
+## [2.1.0](https://github.com/openeuropa/composite_reference/tree/2.1.0) (2022-02-03)
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.0.0...2.1.0)
 
 **Merged pull requests:**
 
