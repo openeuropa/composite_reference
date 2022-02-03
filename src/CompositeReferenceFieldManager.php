@@ -204,13 +204,13 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
    */
   protected function isCompositeField(FieldDefinitionInterface $field_definition): bool {
     if ($field_definition instanceof FieldConfigInterface) {
-      // This works for both configurable fields, as well as base field
+      // This works for both configurable fields, and base field
       // overrides.
       return $field_definition->getThirdPartySetting('composite_reference', 'composite', FALSE);
     }
 
     if ($field_definition instanceof BaseFieldDefinition) {
-      return (bool) $field_definition->getSetting('composite_reference')['composite'];
+      return $field_definition->getSetting('composite_reference')['composite'] ?? FALSE;
     }
 
     return FALSE;

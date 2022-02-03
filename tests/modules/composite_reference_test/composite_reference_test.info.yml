@@ -2,7 +2,7 @@ name: 'Composite reference test'
 type: module
 description: 'Support module for composite reference testing.'
 package: Testing
-core_version_requirement: ^8.8 || ^9
+core_version_requirement: ^9.2
 dependencies:
   - drupal:node
   - entity_reference_revisions:entity_reference_revisions
