@@ -76,6 +76,7 @@ class CompositeReferenceFieldManager implements CompositeReferenceFieldManagerIn
         $query->condition("$field_name.target_id", $entity->id());
       }
 
+      // $query->accessCheck(FALSE);
       $ids = $query->execute();
       if ($ids) {
         $referencing_entities = $entity_type_storage->loadMultiple($ids) + $referencing_entities;

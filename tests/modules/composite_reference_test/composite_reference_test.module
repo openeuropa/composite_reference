@@ -7,6 +7,7 @@
 
 declare(strict_types = 1);
 
+use Drupal\Core\Database\Query\AlterableInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 
@@ -75,4 +76,12 @@ function composite_reference_test_entity_base_field_info(EntityTypeInterface $en
     ]);
 
   return $fields;
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function composite_reference_test_query_node_access_alter(AlterableInterface $query) {
+  $group = $query->andConditionGroup()->condition('node_field_data.nid', '0', '=');
+  $query->innerJoin('node_field_data', NULL, $group);
 }
