@@ -280,6 +280,8 @@ class CompositeFieldsTest extends EntityKernelTestBase {
    * Tests the composite reference fields with revision deletion.
    */
   public function testCompositeRevisionField(): void {
+    $user = $this->drupalCreateUser();
+    $this->drupalSetCurrentUser($user);
     $type = $this->entityTypeManager->getStorage('node_type')->create([
       'name' => 'Test content type',
       'type' => 'test_ct',
@@ -353,7 +355,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       $referenced_entity->save();
 
       // Create two entities that reference the referenced entity in their
-      // firs revision, but not the second one.
+      // first revision, but not the second one.
       $values = [
         'type' => $type->id(),
         'title' => 'Referencing node one',
@@ -368,7 +370,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       $referencing_node_one->setNewRevision(TRUE);
       $referencing_node_one->set($field_definition['field_name'], NULL);
       $referencing_node_one->save();
-      $this->assertCount(2, $node_storage->getQuery()->condition('nid', $referencing_node_one->id())->allRevisions()->execute());
+      $this->assertCount(2, $node_storage->getQuery()->condition('nid', $referencing_node_one->id())->allRevisions()->accessCheck(FALSE)->execute());
 
       $values = [
         'type' => $type->id(),
@@ -384,7 +386,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
       $referencing_node_two->setNewRevision(TRUE);
       $referencing_node_two->set($field_definition['field_name'], NULL);
       $referencing_node_two->save();
-      $this->assertCount(2, $node_storage->getQuery()->condition('nid', $referencing_node_two->id())->allRevisions()->execute());
+      $this->assertCount(2, $node_storage->getQuery()->condition('nid', $referencing_node_two->id())->allRevisions()->accessCheck(FALSE)->execute());
 
       // Now delete the first referencing node and assert the referenced node
       // was not deleted because it was still being referenced by the second
