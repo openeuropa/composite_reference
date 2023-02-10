@@ -1,5 +1,5 @@
 name: Composite Reference
 description: This module allows to mark entity reference fields as composite.
 type: module
-core_version_requirement: ^9.4
+core_version_requirement: ^9.5 || ^10
 package: Field types
