@@ -19,7 +19,7 @@ class CompositeFieldsTest extends EntityKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'field',
     'entity_test',
     'link',
