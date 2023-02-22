@@ -1,7 +1,14 @@
 # Changelog
 
-## [2.1.1](https://github.com/openeuropa/composite_reference/tree/2.1.1) (2022-12-02)
+## [2.2.0](https://github.com/openeuropa/composite_reference/tree/2.2.0) (2023-02-22)
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.1.1...2.2.0)
 
+**Merged pull requests:**
+
+- EWPP-2991: Drupal 10 compatibility. [\#23](https://github.com/openeuropa/composite_reference/pull/23) ([brummbar](https://github.com/brummbar))
+- EWPP-2885: Update to PHP 8.1. [\#22](https://github.com/openeuropa/composite_reference/pull/22) ([22Alexandra](https://github.com/22Alexandra))
+
+## [2.1.1](https://github.com/openeuropa/composite_reference/tree/2.1.1) (2022-12-02)
 [Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.1.0...2.1.1)
 
 **Merged pull requests:**
