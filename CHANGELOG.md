@@ -1,22 +1,35 @@
 # Changelog
 
+## [2.3.0](https://github.com/openeuropa/composite_reference/tree/2.3.0) (2024-02-16)
+
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.2.0...2.3.0)
+
+**Merged pull requests:**
+
+- EWPP-3964: Drop D9 and add D10.2 and php8.2 to matrix. [\#25](https://github.com/openeuropa/composite_reference/pull/25) ([nagyad](https://github.com/nagyad))
+
 ## [2.2.0](https://github.com/openeuropa/composite_reference/tree/2.2.0) (2023-02-22)
+
 [Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.1.1...2.2.0)
 
 **Merged pull requests:**
 
+- Prepare changelog for release 2.2.0. [\#24](https://github.com/openeuropa/composite_reference/pull/24) ([brummbar](https://github.com/brummbar))
 - EWPP-2991: Drupal 10 compatibility. [\#23](https://github.com/openeuropa/composite_reference/pull/23) ([brummbar](https://github.com/brummbar))
 - EWPP-2885: Update to PHP 8.1. [\#22](https://github.com/openeuropa/composite_reference/pull/22) ([22Alexandra](https://github.com/22Alexandra))
 
 ## [2.1.1](https://github.com/openeuropa/composite_reference/tree/2.1.1) (2022-12-02)
+
 [Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.1.0...2.1.1)
 
 **Merged pull requests:**
 
+- Release-2.1.1: Update changelog. [\#21](https://github.com/openeuropa/composite_reference/pull/21) ([nagyad](https://github.com/nagyad))
 - EWPP-2817: Ensure query access check not used in getReferencingEntities. [\#20](https://github.com/openeuropa/composite_reference/pull/20) ([nagyad](https://github.com/nagyad))
 
 ## [2.1.0](https://github.com/openeuropa/composite_reference/tree/2.1.0) (2022-02-03)
-[Full Changelog](https://github.com/openeuropa/composite_reference/compare/2.0.0...2.1.0)
+
+[Full Changelog](https://github.com/openeuropa/composite_reference/compare/8.x-1.0-alpha3...2.1.0)
 
 **Merged pull requests:**
 
