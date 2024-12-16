@@ -1,3 +1,7 @@
+# :warning: This repository is archived
+
+Development has moved to [drupal.org](https://www.drupal.org/project/composite_reference).
+
 # Composite Reference
 
 The Composite Reference module allows users to mark entity reference fields as composite.
